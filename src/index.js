@@ -1,18 +1,16 @@
-import React, { Component } from 'react';
-import ReactDOM from 'react-dom';
-import './index.css';
-import NoteDisplay from './components/NoteDisplay';
-import NoteInput from './components/NoteInput';
+import React from 'react'
+import ReactDOM from 'react-dom'
+import { createStore } from 'redux'
+import { Provider } from 'react-redux'
+import NoteApp from './containers/NoteApp'
+import notesReducer from './reducers/notes'
+import './index.css'
 
-class Index extends Component {
-  render() {
-    return(
-        <div>
-          <NoteDisplay />
-          <NoteInput />
-        </div>
-      )
-  }
-}
+const store = createStore(notesReducer)
 
-ReactDOM.render(<Index />, document.getElementById('root'));
+ReactDOM.render(
+  <Provider store={store}>
+    <NoteApp />
+  </Provider>,
+  document.getElementById('root')
+);
