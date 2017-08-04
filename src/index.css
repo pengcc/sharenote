@@ -72,10 +72,15 @@ body {
   margin-bottom: 15px;
 }
 
+.note-editor--share {
+  float: left;
+}
+
+.note-editor--share button,
 .note-editor--add button,
 .note-editor--save button {
   padding: 5px 10px;
-  width: 80px;
+  width: 90px;
   border: none;
   border-radius: 3px;
   background-color: #00a3cf;
@@ -134,7 +139,7 @@ body {
 }
 
 .note-update {
-  right: 30px;
+  right: 50px;
   color: #00a3cf;
 }
 

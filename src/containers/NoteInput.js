@@ -13,7 +13,7 @@ class NoteInputContainer extends Component {
 
   constructor () {
     super()
-    this.state = { username: '' }
+    this.state = { username: '', filename: '' }
   }
 
   componentWillMount () {
@@ -33,7 +33,11 @@ class NoteInputContainer extends Component {
 
   _saveNotes(newNotes) {
     let host = "http://localhost:5050";
-    fetchSaveJson(host, newNotes);
+    let data = {newNotes: newNotes, filename: this.state.filename};
+    fetchSaveJson(host, data, (res) => {
+        let filename = res.filename;
+        this.setState({ filename });
+    });
   }
   _getNewNotes(note) {
     const { notes } = this.props
@@ -54,10 +58,10 @@ class NoteInputContainer extends Component {
   handleSubmitNote (note) {
     if (!note) return
     if (!note.username) {
-      return alert('请输入名字');
+      return alert('Please type the user name!');
     }
     if (!note.content) {
-      return alert('请输入内容')
+      return alert('Please type the content!');
     }
     this._saveUsernameLocal(note.username);
     const newNotes = this._getNewNotes(note);
@@ -72,6 +76,7 @@ class NoteInputContainer extends Component {
       <NoteInput
         username={this.state.username}
         updateNote={this.props.updateNote}
+        filename={this.state.filename}
         onUserNameInputBlur={this._saveUsernameLocal.bind(this)}
         onSubmit={this.handleSubmitNote.bind(this)} />
     )

@@ -14,4 +14,4 @@ You can then view the app in your browser at
 [http://localhost:3000](http://localhost:3000).
 
 # Todos
-Add the share function
+Fix the note edit/delete button, when new note added, the edit/delete button should be updated right
