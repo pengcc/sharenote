@@ -1,32 +1,46 @@
-const securedPathname = ['/shared', '/save', '/create'];
+const isObject = (o) => {
+  return o && o !== null && typeof o === 'object';
+}
 
-let isSecuredPath = () => securedPathname.indexOf(window.location.pathname) > -1;
+const getRequestMethod = (type) => {
+  const methodMap = {
+    'view': 'GET',
+    'create': 'POST',
+    'save': 'POST'
+  };
+  return methodMap[type];
+}
 
-const getSettings = (host, data) => {
-  let isPostRequest = (data) => {
-    return data && data !== null && typeof data === 'object';
-  }
+const getReqeustUrl = (host, type) => {
   let location = window.location;
-  let remotehost = host;
-  let pathname = isPostRequest(data) ? '/save' : location.pathname
-  let url = remotehost + pathname + location.search;
+  let url = `${host}/${type}${location.search}`;
+  return url;
+}
+
+const getConfigs = (type, data) => {
+  let method = getRequestMethod(type);
   let configs = {
-    method: isPostRequest(data) ? 'POST' : 'GET',
+    method: method,
     headers: {
       'Accept': 'application/json, text/plain, */*',
       'Content-Type': 'application/json'
     }
   };
-  if (isPostRequest(data)) {
+  if (method === 'POST' && isObject(data)) {
     configs.body = JSON.stringify(data);
   }
+  return configs;
+}
+
+const getFetchSettings = (host, type, data) => {
+  let url = getReqeustUrl(host, type);
+  let configs = getConfigs(type, data);
   return { url, configs };
 }
 
-
-export const fetchReadJson = (host, callback) => {
-  if (!isSecuredPath()) { return; }
-  let settings = getSettings(host);
+const fetchSaveJson = (host, type, data={}, callback) => {
+  let settings = getFetchSettings(host, type, data);
+  // post data to server
   fetch(settings.url, settings.configs)
     .then( (res) => res.json() )
     .then( (data) => {
@@ -36,12 +50,19 @@ export const fetchReadJson = (host, callback) => {
     });
 };
 
+const fetchCreateJson = (host, type, data={}, callback) => {
+  return fetchSaveJson(host, type, data, callback);
+};
+
 /**
 * @param data {JSON}
 */
-export const fetchSaveJson = (host, data={}, callback) => {
-  let settings = getSettings(host, data);
-  // post data to server
+const fetchReadJson = (host, callback) => {
+  if (window.location.pathname.indexOf('view') < 0) {
+    return;
+  }
+  let type = 'view';
+  let settings = getFetchSettings(host, type);
   fetch(settings.url, settings.configs)
     .then( (res) => res.json() )
     .then( (data) => {
@@ -49,4 +70,6 @@ export const fetchSaveJson = (host, data={}, callback) => {
         callback(data);
       }
     });
-}
+};
+
+export { fetchReadJson, fetchCreateJson, fetchSaveJson }

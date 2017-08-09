@@ -3,56 +3,77 @@ import PropTypes from 'prop-types'
 import { connect } from 'react-redux'
 import NoteInput from '../components/NoteInput'
 import { saveNotes } from '../reducers/notes'
-import { fetchSaveJson } from '../utils/httpHelper'
+import { fetchCreateJson, fetchSaveJson } from '../utils/httpHelper'
 
 class NoteInputContainer extends Component {
   static propTypes = {
     notes: PropTypes.array,
+    filename: PropTypes.string,
+    username: PropTypes.string,
+    index_edit: PropTypes.number,
+    is_edit:PropTypes.bool,
     onSubmit: PropTypes.func
   }
 
-  constructor () {
-    super()
-    this.state = { username: '', filename: '' }
+  static defaultProps = {
+    filename: ''
   }
 
-  componentWillMount () {
-    this._loadUsernameLocal()
-  }
-
-  _loadUsernameLocal () {
-    const username = localStorage.getItem('username')
-    if (username) {
-      this.setState({ username })
+  _saveNotesAfterAdding(data) {
+    let host = "http://localhost:5050";
+    let notes = data.notes;
+    let request_data = { notes };
+    // filename does exist. save the the new notes
+    let is_request_save = this.props.filename.length > 0;
+    if (is_request_save) {
+      let filename = this.props.filename;
+      request_data.filename = filename;
+      fetchSaveJson(host, 'save', request_data, (res) => {
+        if (this.props.onSubmit) {
+          let submit_data = {notes: notes, username: data.username, filename}
+          this.props.onSubmit(submit_data)
+        }
+      })
+    } else {
+      fetchCreateJson(host, 'create', request_data, (res) => {
+          let filename = res.filename;
+          if (this.props.onSubmit) {
+            let submit_data = {notes: notes, username: data.username, filename}
+            this.props.onSubmit(submit_data)
+          }
+      });
     }
   }
 
-  _saveUsernameLocal (username) {
-    localStorage.setItem('username', username)
+  _saveNotesAfterEditing (data) {
+    let host = "http://localhost:5050";
+    let notes = data.notes;
+    let request_data = { notes };
+    let filename = this.props.filename;
+    request_data.filename = filename;
+    fetchSaveJson(host, 'save', request_data, (res) => {
+      if (this.props.onSubmit) {
+        let submit_data = {notes: notes, username: data.username, filename}
+        this.props.onSubmit(submit_data)
+      }
+    })
   }
 
-  _saveNotes(newNotes) {
-    let host = "http://localhost:5050";
-    let data = {newNotes: newNotes, filename: this.state.filename};
-    fetchSaveJson(host, data, (res) => {
-        let filename = res.filename;
-        this.setState({ filename });
-    });
-  }
-  _getNewNotes(note) {
-    const { notes } = this.props
-    let newNotes = [...notes];
-    let isNewUser = true
-    let notesLen = newNotes.length
-    for (let i=0; i < notesLen; i++) {
-      let item = newNotes[i];
-      if (item.username === note.username) {
-        isNewUser = false;
-        newNotes[i].content = note.content;
-        break;
+  checkUsernameExist (name) {
+    if (name.trim().length > 0  && name !== this.props.username && !this.props.is_edit ) {
+      let notes = this.props.notes;
+      for (let i=0, len = notes.length; i < len; i++) {
+        let note = notes[i];
+        if (note.username === name) {
+          return true;
+        }
       }
     }
-    return isNewUser ? [...notes, note] : newNotes;
+  }
+  handleUserNameInputBlur(username) {
+    if (this.checkUsernameExist(username)) {
+      alert(`${username} exists already! Please use another name!`);
+    }
   }
 
   handleSubmitNote (note) {
@@ -63,37 +84,54 @@ class NoteInputContainer extends Component {
     if (!note.content) {
       return alert('Please type the content!');
     }
-    this._saveUsernameLocal(note.username);
-    const newNotes = this._getNewNotes(note);
-    this._saveNotes({"notes": newNotes});
-    if (this.props.onSubmit) {
-      this.props.onSubmit(newNotes)
+
+    let username = note.username;
+    if (this.checkUsernameExist(username)) {
+      return  alert(`${username} exists already! Please use another name!`);
     }
+    let notes = this.props.notes;
+    if (!this.props.is_edit) {
+      let old_notes_len = notes.length;
+      let new_notes= [];
+      if (username === this.props.username) {
+        // not click the edit button, direct update the current user's content
+        new_notes = [...notes.slice(0, old_notes_len-1), note];
+      } else {
+        new_notes = [...notes, note];
+      }
+      this._saveNotesAfterAdding({notes: new_notes, username: username});
+    } else {
+      let edited_notes = [...notes];
+      let index_edit = this.props.index_edit;
+      edited_notes[index_edit].content = note.content;
+      this._saveNotesAfterEditing({notes: edited_notes, username: username});
+    }
+
   }
 
   render () {
     return (
       <NoteInput
-        username={this.state.username}
-        updateNote={this.props.updateNote}
-        filename={this.state.filename}
-        onUserNameInputBlur={this._saveUsernameLocal.bind(this)}
+        notes={this.props.notes}
+        username={this.props.username}
+        index_edit={this.props.index_edit}
+        filename={this.props.filename}
+        onUserNameInputBlur={this.handleUserNameInputBlur.bind(this)}
         onSubmit={this.handleSubmitNote.bind(this)} />
     )
   }
 }
 
 const mapStateToProps = (state) => {
-  let updateNoteIndex = state.hasOwnProperty('updateNoteIndex') ? state.updateNoteIndex : null;
-  let notes = state.notes;
-  let updateNote = updateNoteIndex !== null ? notes[updateNoteIndex] : {};
-  return {...{notes: notes}, updateNote}
+  let index_edit = state.hasOwnProperty('index_edit') ? state.index_edit : null;
+  let is_edit = state.hasOwnProperty('is_edit') ? state.is_edit : false;
+  return {notes: state.notes, username: state.username, filename: state.filename, index_edit, is_edit}
 }
 
 const mapDispatchToProps = (dispatch) => {
   return {
-    onSubmit: (notes) => {
-      dispatch(saveNotes(notes))
+    onSubmit: (data) => {
+      dispatch(saveNotes(data))
     }
   }
 }

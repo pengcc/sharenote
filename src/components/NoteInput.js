@@ -10,30 +10,31 @@ export default class NoteInput extends Component {
   }
 
   static defaultProps = {
-    username: ''
+    username: '',
+    filename: ''
   }
 
   constructor (props) {
     super(props)
     this.state = {
-      username: props.username,
-      content: '',
-      filename: '',
+      username: '',
       editor_input_class: 'note-editor__input'
     }
   }
 
-  componentWillReceiveProps(nextProps) {
-    let content = nextProps.updateNote.hasOwnProperty('content') ? nextProps.updateNote.content: '';
-    let filename = nextProps.hasOwnProperty('filename') ? nextProps.filename : '';
-    this.setState({content, filename});
+  componentWillReceiveProps(next_props) {
+    // on edit show the note content to the textarea
+    let index_edit = next_props.index_edit;
+    let notes = this.props.notes;
+    let content = index_edit !== undefined && index_edit !== null ? notes[index_edit].content: '';
+    this.setState({content});
   }
 
   componentDidMount () {
     this.textarea.focus()
   }
 
-  handleUsernameBlur (event) {
+  handleUsernameInputBlur (event) {
     if (this.props.onUserNameInputBlur) {
       this.props.onUserNameInputBlur(event.target.value)
     }
@@ -66,9 +67,9 @@ export default class NoteInput extends Component {
   }
 
   render () {
-    let ShareButton = this.state.filename.length > 0 ? (
+    let ShareButton = this.props.filename.length > 0 ? (
       <div className='note-editor--share'>
-        <CopyToClipboard text={`${window.location.host}/shared?file=${this.state.filename}`}>
+        <CopyToClipboard text={`${window.location.host}/view?file=${this.props.filename}`}>
           <button>Share Note</button>
         </CopyToClipboard>
       </div>
@@ -86,7 +87,7 @@ export default class NoteInput extends Component {
             <div className='note-field__input'>
               <input
                 value={this.state.username}
-                onBlur={this.handleUsernameBlur.bind(this)}
+                onBlur={this.handleUsernameInputBlur.bind(this)}
                 onChange={this.handleUsernameChange.bind(this)} />
             </div>
           </div>

@@ -6,7 +6,7 @@ export default class NoteList extends Component {
   static propTypes = {
     notes: PropTypes.array,
     onDeleteNote: PropTypes.func,
-    onUpdateNote: PropTypes.func
+    onEditNote: PropTypes.func
   }
 
   static defaultProps = {
@@ -19,14 +19,14 @@ export default class NoteList extends Component {
     }
   }
 
-  handleUpdateNote (index) {
-    if (this.props.onUpdateNote) {
-      this.props.onUpdateNote(index)
+  handleEditNote (index) {
+    if (this.props.onEditNote) {
+      this.props.onEditNote(index)
     }
   }
 
   render() {
-    let currentUser = this.props.currentUser;
+    let current_username = this.props.username;
     return (
       <div>
         {this.props.notes.map((note, i) =>
@@ -34,8 +34,8 @@ export default class NoteList extends Component {
             note={note}
             key={i}
             index={i}
-            isEditable={note.username === currentUser}
-            onUpdateNote={this.handleUpdateNote.bind(this)}
+            is_editable={note.username === current_username}
+            onEditNote={this.handleEditNote.bind(this)}
             onDeleteNote={this.handleDeleteNote.bind(this)} />
         )}
       </div>

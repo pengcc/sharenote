@@ -129,7 +129,7 @@ body {
 }
 
 .note-delete,
-.note-update {
+.note-edit {
   position: absolute;
   right: 0;
   top: 0;
@@ -138,7 +138,7 @@ body {
   cursor: pointer;
 }
 
-.note-update {
+.note-edit {
   right: 50px;
   color: #00a3cf;
 }

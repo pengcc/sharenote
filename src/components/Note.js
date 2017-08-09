@@ -5,6 +5,7 @@ export default class Note extends Component {
   static propTypes = {
     note: PropTypes.object.isRequired,
     onDeleteNote: PropTypes.func,
+    onEditNote: PropTypes.func,
     index: PropTypes.number
   }
 
@@ -17,30 +18,26 @@ export default class Note extends Component {
       .replace(/'/g, "&#039;")
       .replace(/`([\S\s]+?)`/g, '<code>$1</code>')
   }
-  componentWillReceiveProps(nextProps) {
-    if (nextProps.hasOwnProperty('isEditable')) {
-      this.setState({isEditable: nextProps.isEditable})
-    }
-  }
+
   handleDeleteNote () {
     if (this.props.onDeleteNote) {
       this.props.onDeleteNote(this.props.index)
     }
   }
 
-  handleUpdateNote () {
-    if (this.props.onUpdateNote) {
-      this.props.onUpdateNote(this.props.index)
+  handleEditNote () {
+    if (this.props.onEditNote) {
+      this.props.onEditNote(this.props.index)
     }
   }
 
   render () {
     const note = this.props.note
-    const EditBlock = this.props.isEditable ? (
+    const EditBlock = this.props.is_editable ? (
       <div>
         <span
-          onClick={this.handleUpdateNote.bind(this)}
-          className="note-update">
+          onClick={this.handleEditNote.bind(this)}
+          className="note-edit">
           Edit
         </span>
         <span

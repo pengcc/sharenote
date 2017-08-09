@@ -2,24 +2,26 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { connect } from 'react-redux'
 import NoteList from '../components/NoteList'
-import { initNotes, deleteNote, updateNote } from '../reducers/notes'
+import { initNotes, deleteNote, editNote } from '../reducers/notes'
 import { fetchReadJson, fetchSaveJson } from '../utils/httpHelper'
 
 class NoteListContainer extends Component {
   static propTypes = {
     notes: PropTypes.array,
-    currentUser: PropTypes.string,
+    filename: PropTypes.string,
+    username: PropTypes.string,
     initNotes: PropTypes.func,
+    onEditNote: PropTypes.func,
     onDeleteNote: PropTypes.func
   }
 
   constructor () {
     super()
-    this.state = { username: '' }
+    this.state = { notes: [], username: '', filename: '' }
   }
 
   componentWillMount () {
-    this._loadNotes()
+    this.handleInitNotes()
     this._loadUsernameLocal()
   }
 
@@ -30,34 +32,40 @@ class NoteListContainer extends Component {
     }
   }
 
-  _loadNotes() {
+  handleInitNotes() {
     let host = "http://localhost:5050";
-    let initNotes = (data) => {
-      let notes = data && data.hasOwnProperty('notes') ? data.notes : [];
-      this.props.initNotes(notes);
+    let initNotes = (initData) => {
+      let notes = initData && initData.hasOwnProperty('notes') ? initData.notes : []
+      let filename = initData && initData.hasOwnProperty('filename') ? initData.filename: ''
+      this.setState({ notes })
+      let data = { notes, filename }
+      if (this.props.initNotes) {
+        this.props.initNotes(data);
+      }
     }
     fetchReadJson(host, initNotes);
   }
 
-  _saveNotes(newNotes) {
-    let host = "http://localhost:5050";
-    fetchSaveJson(host, newNotes);
+  _saveNotesAfterDeleting(request_data) {
+    let host = "http://localhost:5050"
+    fetchSaveJson(host, 'save', request_data);
   }
 
-  handleUpdateNote (index) {
-    if (this.props.onUpdateNote) {
-      this.props.onUpdateNote(index);
+  handleEditNote (index) {
+    if (this.props.onEditNote) {
+      this.props.onEditNote({index_edit: index});
     }
   }
   handleDeleteNote (index) {
     const { notes } = this.props
-    const newNotes = [
+    const new_notes = [
       ...notes.slice(0, index),
       ...notes.slice(index + 1)
     ]
-    this._saveNotes({"notes": newNotes});
+    let filename = this.props.filename
+    this._saveNotesAfterDeleting({"notes": new_notes, filename: filename});
     if (this.props.onDeleteNote) {
-      this.props.onDeleteNote(index)
+      this.props.onDeleteNote({"notes": new_notes, filename: filename, username: this.props.username})
     }
   }
 
@@ -65,29 +73,30 @@ class NoteListContainer extends Component {
     return (
       <NoteList
         notes={this.props.notes}
-        currentUser={this.state.username}
-        onUpdateNote={this.handleUpdateNote.bind(this)}
+        filename={this.props.filename}
+        username={this.props.username}
+        onEditNote={this.handleEditNote.bind(this)}
         onDeleteNote={this.handleDeleteNote.bind(this)} />
     )
   }
 }
 
 const mapStateToProps = (state) => {
-  return {
-    notes: state.notes
-  }
+  // get the porperties from state
+  return { notes: state.notes, filename: state.filename, username: state.username }
 }
 
 const mapDispatchToProps = (dispatch) => {
+  // update state
   return {
-    initNotes: (notes) => {
-      dispatch(initNotes(notes))
+    initNotes: (data) => {
+      dispatch(initNotes(data))
     },
-    onDeleteNote: (noteIndex) => {
-      dispatch(deleteNote(noteIndex))
+    onDeleteNote: (data) => {
+      dispatch(deleteNote(data))
     },
-    onUpdateNote: (noteIndex) => {
-      dispatch(updateNote(noteIndex))
+    onEditNote: (data) => {
+      dispatch(editNote(data))
     }
   }
 }
